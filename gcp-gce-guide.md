@@ -28,7 +28,7 @@ roles/iam.workloadIdentityUser
 ##### Step 4: Grant required role to the principal
 
 ```bash
-$ gcloud iam service-accounts add-iam-policy-binding ${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com --member="user:[USER_EMAIL]" --role=roles/iam.serviceAccountUser
+$ gcloud iam service-accounts add-iam-policy-binding ${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com --member="user:${USER_EMAIL}" --role=roles/iam.serviceAccountUser
 ```
 
 ##### Step 5: Create GCE (Google Compute Engine) instance
