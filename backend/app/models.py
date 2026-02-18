@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 from sqlmodel import Field, SQLModel, Relationship
 
 
@@ -290,13 +290,21 @@ class UsersCreate(SQLModel):
 
 
 class DevilFruitCreate(SQLModel):
-    fruit_id: UUID = Field(default_factory=uuid4)
     ability: str
     awakened_ability: Optional[str] = None
     is_canon: bool = True
     names: NamesCreate
     types: list[TypeCreate]
     users: UsersCreate
+
+
+class DevilFruitUpdate(SQLModel):
+    ability: Optional[str] = None
+    awakened_ability: Optional[str] = None
+    is_canon: Optional[bool] = None
+    names: Optional[NamesCreate] = None
+    types: Optional[list[TypeCreate]] = None
+    users: Optional[UsersCreate] = None
 
 
 # relationship models
