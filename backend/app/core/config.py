@@ -49,11 +49,11 @@ class Settings(BaseSettings):
             return None
         return "auth/devil-fruit-database-id-74c3321bcd94.json" if self.ENVIRONMENT.is_dev else None
 
+    API_KEY: str = ""
+
     @computed_field
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        if self.ENVIRONMENT.is_prod:
-            return f"sqlite:///{self.SQLITE_DB_PATH}?mode=ro"
         return f"sqlite:///{self.SQLITE_DB_PATH}"
 
 
