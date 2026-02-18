@@ -147,4 +147,4 @@ Production deployment is handled through GitHub Actions, which:
 - Manages environment-specific configurations
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License](https://creativecommons.org/licenses/by-nc-nd/4.0/) - see the [LICENSE.md](LICENSE.md) file for details.
