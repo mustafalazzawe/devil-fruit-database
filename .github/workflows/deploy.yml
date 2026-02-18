@@ -26,6 +26,7 @@ permissions:
 env:
   PROJECT_ID: devil-fruit-database-id
   SECRET_ID: devil-fruit-service-account-key
+  API_SECRET_ID: devil-fruit-api-key
   GAR_LOCATION: us-east1
   REPOSITORY: devil-fruit-backend
   SERVICE: devil-fruit-database-crs
@@ -121,7 +122,7 @@ jobs:
             --service-account=${{ vars.WIF_SERVICE_ACCOUNT }}
             --execution-environment=gen2
             --timeout=600s
-            --set-secrets=GC_SA_KEY=${{env.SECRET_ID}}:latest
+            --set-secrets=GC_SA_KEY=${{env.SECRET_ID}}:latest,API_KEY=${{env.API_SECRET_ID}}:latest
           env_vars: |
             ENVIRONMENT=${{ env.ENVIRONMENT }}
             GCS_BUCKET_NAME=${{ env.GCS_BUCKET_NAME }}

@@ -1,10 +1,12 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security
+from fastapi.security import APIKeyHeader
 from sqlalchemy import func
 from sqlmodel import Session, or_, select
 
 from app.models import (
     DevilFruit,
+    DevilFruitCreate,
     DevilFruitSimple,
     DevilFruitRead,
     FieldSelection,
@@ -12,8 +14,17 @@ from app.models import (
     RomanizedName,
     TranslatedName,
     User,
+    UserAwakening,
 )
-from app.core.db import get_session
+from app.core.config import settings
+from app.core.db import get_session, upload_db_to_gcs
+
+api_key_header = APIKeyHeader(name="X-API-Key")
+
+
+def verify_api_key(api_key: str = Security(api_key_header)):
+    if api_key != settings.API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 
 router = APIRouter(tags=["Devil Fruits"])
@@ -199,16 +210,73 @@ def search_devils_fruits(
     return orm_devil_fruits
 
 
-# TODO: Improve devil fruit create model to include relationships
-@router.post("/create/", response_model=DevilFruit, tags=["Devil Fruits"])
+@router.post("/create/", response_model=DevilFruitRead, dependencies=[Depends(verify_api_key)])
 def create_devil_fruit(
-    *, session: Session = Depends(get_session), devil_fruit: DevilFruit
+    *, session: Session = Depends(get_session), devil_fruit: DevilFruitCreate
 ):
-    db_devil_fruit = DevilFruit.model_validate(devil_fruit)
-
+    db_devil_fruit = DevilFruit(
+        fruit_id=devil_fruit.fruit_id,
+        ability=devil_fruit.ability,
+        awakened_ability=devil_fruit.awakened_ability,
+        is_canon=devil_fruit.is_canon,
+    )
     session.add(db_devil_fruit)
-    session.commit()
 
+    for rname in devil_fruit.names.romanized_names:
+        session.add(RomanizedName(name=rname.name, is_spoiler=rname.is_spoiler, fruit_id=db_devil_fruit.fruit_id))
+
+    for tname in devil_fruit.names.translated_names:
+        session.add(TranslatedName(name=tname.name, is_spoiler=tname.is_spoiler, fruit_id=db_devil_fruit.fruit_id))
+
+    for type_data in devil_fruit.types:
+        session.add(FruitTypeAssociation(type=type_data.type, is_spoiler=type_data.is_spoiler, fruit_id=db_devil_fruit.fruit_id))
+
+    for user_data in devil_fruit.users.current_users:
+        user = User(user=user_data.user, is_artificial=user_data.is_artificial, is_current=True, is_spoiler=user_data.is_spoiler, fruit_id=db_devil_fruit.fruit_id)
+        session.add(user)
+        session.add(UserAwakening(is_awakened=user_data.awakening.is_awakened, is_spoiler=user_data.awakening.is_spoiler, user=user))
+
+    for user_data in devil_fruit.users.previous_users:
+        user = User(user=user_data.user, is_artificial=user_data.is_artificial, is_current=False, is_spoiler=user_data.is_spoiler, fruit_id=db_devil_fruit.fruit_id)
+        session.add(user)
+        session.add(UserAwakening(is_awakened=user_data.awakening.is_awakened, is_spoiler=user_data.awakening.is_spoiler, user=user))
+
+    session.commit()
     session.refresh(db_devil_fruit)
 
-    return db_devil_fruit
+    if settings.ENVIRONMENT.is_prod:
+        upload_db_to_gcs()
+
+    return DevilFruitRead.from_orm(db_devil_fruit)
+
+
+@router.delete("/delete/{fruit_id}", dependencies=[Depends(verify_api_key)])
+def delete_devil_fruit(*, session: Session = Depends(get_session), fruit_id: UUID):
+    db_devil_fruit = session.get(DevilFruit, fruit_id)
+    if not db_devil_fruit:
+        raise HTTPException(status_code=404, detail="Devil fruit not found")
+
+    # Delete child records manually (SQLite does not enforce FK cascades by default)
+    users = session.exec(select(User).where(User.fruit_id == fruit_id)).all()
+    for user in users:
+        awakenings = session.exec(select(UserAwakening).where(UserAwakening.user_id == user.id)).all()
+        for awakening in awakenings:
+            session.delete(awakening)
+        session.delete(user)
+
+    for record in session.exec(select(RomanizedName).where(RomanizedName.fruit_id == fruit_id)).all():
+        session.delete(record)
+
+    for record in session.exec(select(TranslatedName).where(TranslatedName.fruit_id == fruit_id)).all():
+        session.delete(record)
+
+    for record in session.exec(select(FruitTypeAssociation).where(FruitTypeAssociation.fruit_id == fruit_id)).all():
+        session.delete(record)
+
+    session.delete(db_devil_fruit)
+    session.commit()
+
+    if settings.ENVIRONMENT.is_prod:
+        upload_db_to_gcs()
+
+    return {"deleted": str(fruit_id)}

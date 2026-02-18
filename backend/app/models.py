@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 from sqlmodel import Field, SQLModel, Relationship
 
 
@@ -82,7 +82,7 @@ class UserAwakening(SQLModel, table=True):
     is_awakened: bool = False
     is_spoiler: bool = False
 
-    user_id: int = Field(foreign_key="user.id")
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     user: "User" = Relationship(back_populates="awakening")
 
 
@@ -254,6 +254,49 @@ class DevilFruitSimple(SQLModel):
             result.update({"users": get_users()})
 
         return cls(**result)
+
+
+# create models
+class NameCreate(SQLModel):
+    name: str
+    is_spoiler: bool = False
+
+
+class NamesCreate(SQLModel):
+    romanized_names: list[NameCreate]
+    translated_names: list[NameCreate]
+
+
+class TypeCreate(SQLModel):
+    type: FruitTypeEnum
+    is_spoiler: bool = False
+
+
+class UserAwakeningCreate(SQLModel):
+    is_awakened: bool = False
+    is_spoiler: bool = False
+
+
+class UserCreate(SQLModel):
+    user: str
+    is_artificial: bool = False
+    is_spoiler: bool = False
+    awakening: UserAwakeningCreate
+
+
+class UsersCreate(SQLModel):
+    current_users: list[UserCreate] = []
+    previous_users: list[UserCreate] = []
+
+
+class DevilFruitCreate(SQLModel):
+    fruit_id: UUID = Field(default_factory=uuid4)
+    ability: str
+    awakened_ability: Optional[str] = None
+    is_canon: bool = True
+    names: NamesCreate
+    types: list[TypeCreate]
+    users: UsersCreate
 
 
 # relationship models
