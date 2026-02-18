@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Security
 from fastapi.security import APIKeyHeader
 from sqlalchemy import func
@@ -7,6 +7,7 @@ from sqlmodel import Session, or_, select
 from app.models import (
     DevilFruit,
     DevilFruitCreate,
+    DevilFruitUpdate,
     DevilFruitSimple,
     DevilFruitRead,
     FieldSelection,
@@ -215,7 +216,7 @@ def create_devil_fruit(
     *, session: Session = Depends(get_session), devil_fruit: DevilFruitCreate
 ):
     db_devil_fruit = DevilFruit(
-        fruit_id=devil_fruit.fruit_id,
+        fruit_id=uuid4(),
         ability=devil_fruit.ability,
         awakened_ability=devil_fruit.awakened_ability,
         is_canon=devil_fruit.is_canon,
@@ -280,3 +281,48 @@ def delete_devil_fruit(*, session: Session = Depends(get_session), fruit_id: UUI
         upload_db_to_gcs()
 
     return {"deleted": str(fruit_id)}
+
+
+@router.patch("/update/{fruit_id}", response_model=DevilFruitRead, dependencies=[Depends(verify_api_key)])
+def update_devil_fruit(*, session: Session = Depends(get_session), fruit_id: UUID, updates: DevilFruitUpdate):
+    db_devil_fruit = session.get(DevilFruit, fruit_id)
+    if not db_devil_fruit:
+        raise HTTPException(status_code=404, detail="Devil fruit not found")
+
+    # Update scalar fields if provided
+    if updates.ability is not None:
+        db_devil_fruit.ability = updates.ability
+    if updates.awakened_ability is not None:
+        db_devil_fruit.awakened_ability = updates.awakened_ability
+    if updates.is_canon is not None:
+        db_devil_fruit.is_canon = updates.is_canon
+    session.add(db_devil_fruit)
+
+    # Append new relationship records
+    if updates.names:
+        for rname in updates.names.romanized_names:
+            session.add(RomanizedName(name=rname.name, is_spoiler=rname.is_spoiler, fruit_id=fruit_id))
+        for tname in updates.names.translated_names:
+            session.add(TranslatedName(name=tname.name, is_spoiler=tname.is_spoiler, fruit_id=fruit_id))
+
+    if updates.types:
+        for type_data in updates.types:
+            session.add(FruitTypeAssociation(type=type_data.type, is_spoiler=type_data.is_spoiler, fruit_id=fruit_id))
+
+    if updates.users:
+        for user_data in updates.users.current_users:
+            user = User(user=user_data.user, is_artificial=user_data.is_artificial, is_current=True, is_spoiler=user_data.is_spoiler, fruit_id=fruit_id)
+            session.add(user)
+            session.add(UserAwakening(is_awakened=user_data.awakening.is_awakened, is_spoiler=user_data.awakening.is_spoiler, user=user))
+        for user_data in updates.users.previous_users:
+            user = User(user=user_data.user, is_artificial=user_data.is_artificial, is_current=False, is_spoiler=user_data.is_spoiler, fruit_id=fruit_id)
+            session.add(user)
+            session.add(UserAwakening(is_awakened=user_data.awakening.is_awakened, is_spoiler=user_data.awakening.is_spoiler, user=user))
+
+    session.commit()
+    session.refresh(db_devil_fruit)
+
+    if settings.ENVIRONMENT.is_prod:
+        upload_db_to_gcs()
+
+    return DevilFruitRead.from_orm(db_devil_fruit)
