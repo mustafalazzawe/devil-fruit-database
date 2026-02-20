@@ -8,6 +8,7 @@ import { ThemeProvider } from "./providers/Theme/ThemeProvider.tsx";
 import { themeVars } from "./providers/Theme/Theme.ts";
 import { DataProvider } from "./providers/Data/DataProvider.tsx";
 import { ModalProvider } from "./providers/Modal/ModalProvider.tsx";
+import { AuthProvider } from "./providers/Auth/AuthProvider.tsx";
 
 const queryClient = new QueryClient();
 
@@ -23,11 +24,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       commonStyles={themeVars.commonStyles}
     >
       <QueryClientProvider client={queryClient}>
-        <DataProvider>
-          <ModalProvider>
-            <App />
-          </ModalProvider>
-        </DataProvider>
+        <AuthProvider>
+          <DataProvider>
+            <ModalProvider>
+              <App />
+            </ModalProvider>
+          </DataProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   </React.StrictMode>

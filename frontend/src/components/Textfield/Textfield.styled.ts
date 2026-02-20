@@ -88,6 +88,16 @@ const TextfieldInput = styled.input.attrs({ type: "text" })<ITextfieldProps>`
     box-shadow: 0px 0px 0px 2px
       ${({ theme }) => theme.interactive["interactive-focus"]};
   }
+
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px
+      ${({ theme }) => theme.background["bg-primary"]} inset;
+    -webkit-text-fill-color: ${({ theme }) => theme.foreground["fg-primary"]};
+    caret-color: ${({ theme }) => theme.foreground["fg-primary"]};
+    transition: background-color 5000s ease-in-out 0s;
+  }
 `;
 
 export default TextfieldInput;

@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     GCS_BUCKET_NAME: str = "devil-fruit-database-id-db"
     GCS_DB_PATH: str = "db/devil_fruits.db"
 
+    API_KEY: str = ""
+
     @computed_field
     @property
     def USE_GCP(self) -> bool:
@@ -48,8 +50,6 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT.is_prod:
             return None
         return "auth/devil-fruit-database-id-74c3321bcd94.json" if self.ENVIRONMENT.is_dev else None
-
-    API_KEY: str = ""
 
     @computed_field
     @property

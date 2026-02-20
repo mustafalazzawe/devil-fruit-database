@@ -85,6 +85,11 @@ const commonColors: IThemeCommonColors = {
     "interactive-primary-hover": palettes.primary[400],
     "interactive-primary-active": palettes.primary[300],
   },
+  commonError: {
+    "error-primary": palettes.error[600],
+    "error-primary-hover": palettes.error[500],
+    "error-primary-active": palettes.error[500],
+  },
   legend: {
     awakened: palettes.legend.amber,
     artificial: palettes.legend.purple,

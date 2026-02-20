@@ -5,16 +5,22 @@ import { IIconProps } from "../Icon/Icon.types";
 export type TButtonVariants =
   | "Outline"
   | "Solid"
+  | "Destructive"
   | "Text"
+  | "TextDestructive"
   | "IconOutline"
-  | "IconSolid";
+  | "IconSolid"
+  | "IconDestructive";
 
 export interface IButtonStyles {
   Outline: CSSProp;
   Solid: CSSProp;
+  Destructive: CSSProp;
   Text: CSSProp;
+  TextDestructive: CSSProp;
   IconOutline: CSSProp;
   IconSolid: CSSProp;
+  IconDestructive: CSSProp;
 }
 
 interface IButtonBaseVariantConfig {
