@@ -292,24 +292,34 @@ def update_devil_fruit(*, session: Session = Depends(get_session), fruit_id: UUI
     # Update scalar fields if provided
     if updates.ability is not None:
         db_devil_fruit.ability = updates.ability
-    if updates.awakened_ability is not None:
-        db_devil_fruit.awakened_ability = updates.awakened_ability
+    # awakened_ability always updated — None explicitly clears it
+    db_devil_fruit.awakened_ability = updates.awakened_ability
     if updates.is_canon is not None:
         db_devil_fruit.is_canon = updates.is_canon
     session.add(db_devil_fruit)
 
-    # Append new relationship records
-    if updates.names:
+    # Replace relationship records (delete existing, insert new)
+    if updates.names is not None:
+        for record in session.exec(select(RomanizedName).where(RomanizedName.fruit_id == fruit_id)).all():
+            session.delete(record)
+        for record in session.exec(select(TranslatedName).where(TranslatedName.fruit_id == fruit_id)).all():
+            session.delete(record)
         for rname in updates.names.romanized_names:
             session.add(RomanizedName(name=rname.name, is_spoiler=rname.is_spoiler, fruit_id=fruit_id))
         for tname in updates.names.translated_names:
             session.add(TranslatedName(name=tname.name, is_spoiler=tname.is_spoiler, fruit_id=fruit_id))
 
-    if updates.types:
+    if updates.types is not None:
+        for record in session.exec(select(FruitTypeAssociation).where(FruitTypeAssociation.fruit_id == fruit_id)).all():
+            session.delete(record)
         for type_data in updates.types:
             session.add(FruitTypeAssociation(type=type_data.type, is_spoiler=type_data.is_spoiler, fruit_id=fruit_id))
 
-    if updates.users:
+    if updates.users is not None:
+        for existing_user in session.exec(select(User).where(User.fruit_id == fruit_id)).all():
+            for awakening in session.exec(select(UserAwakening).where(UserAwakening.user_id == existing_user.id)).all():
+                session.delete(awakening)
+            session.delete(existing_user)
         for user_data in updates.users.current_users:
             user = User(user=user_data.user, is_artificial=user_data.is_artificial, is_current=True, is_spoiler=user_data.is_spoiler, fruit_id=fruit_id)
             session.add(user)

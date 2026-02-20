@@ -35,6 +35,11 @@ export interface IThemeCommonColors {
     "interactive-primary-hover": string;
     "interactive-primary-active": string;
   };
+  commonError: {
+    "error-primary": string;
+    "error-primary-hover": string;
+    "error-primary-active": string;
+  };
   legend: {
     awakened: string;
     artificial: string;

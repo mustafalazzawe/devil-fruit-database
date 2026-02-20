@@ -13,9 +13,14 @@ export type TIconComponents =
   | "Cross"
   | "Copy"
   | "Download"
+  | "Edit"
+  | "Login"
+  | "Logout"
   | "Moon"
+  | "Plus"
   | "Search"
-  | "Sun";
+  | "Sun"
+  | "Trash";
 
 export const IconComponentMap: Record<
   string,

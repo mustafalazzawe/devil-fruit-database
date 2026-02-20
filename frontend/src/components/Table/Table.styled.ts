@@ -126,8 +126,8 @@ export const EmptyActionsContainer = styled.div`
 `;
 
 export const EmptyHeaderText = styled.p`
-  ${({ theme }) => theme.label}
-  color: ${({ theme }) => theme.foreground["fg-primary"]};
+  ${({ theme }) => theme.bodySmall}
+  color: ${({ theme }) => theme.foreground["fg-disabled"]};
 `;
 
 export const EmptyBodyTextContainer = styled.div`
